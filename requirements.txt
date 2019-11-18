@@ -1,0 +1,3 @@
+rotten_tomatoes_client
+PyYAML
+aiogram
