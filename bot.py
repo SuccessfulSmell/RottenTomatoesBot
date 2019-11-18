@@ -33,6 +33,16 @@ async def opening_this_week(message: types.Message):
     await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
 
 
+@dp.message_handler(commands=['films'])
+async def list_of_films(message: types.Message):
+    await bot.send_message(message.chat.id, text='This feature is not  available yet...')
+
+
+@dp.message_handler(commands=['donate'])
+async def opening_this_week(message: types.Message):
+    await bot.send_message(message.chat.id, text='This feature is not  available yet...')
+
+
 @dp.message_handler(commands=['random'])
 async def random_movie(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
@@ -76,7 +86,7 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
         msg = parser.get_random_classics()
         await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
     elif callback_data_action == '5':
-        msg = parser.get_random_comdedy()
+        msg = parser.get_random_comedy()
         await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
     elif callback_data_action == '6':
         msg = parser.get_random_documentary()
@@ -102,6 +112,21 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
     elif callback_data_action == '13':
         msg = parser.get_random_genre_movie()
         await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+
+
+@dp.message_handler(content_types=['text'])
+async def search(message: types.Message):
+    if message:
+        search_result = parser.tomatoes_search(message.text).get('movies', '')
+        if search_result:
+            msg = '<b>Search results:</b>\n\n'
+            for result in search_result:
+                msg += f'\n<b>&#127813;{result.get("name", "")}</b>' \
+                       f'\n{parser.base_url}{result.get("url", "")}\n'
+            await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
+        else:
+            msg = f'No results were found for "{message.text}" request . Sorry...'
+            await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
 
 
 if __name__ == '__main__':
