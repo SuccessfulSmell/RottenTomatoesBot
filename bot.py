@@ -35,6 +35,13 @@ async def opening_this_week(message: types.Message):
 
 @dp.message_handler(commands=['films'])
 async def list_of_films(message: types.Message):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(
+        types.InlineKeyboardButton('add at list', callback_data=vote_cb.new(action='add')))
+    keyboard.add(types.InlineKeyboardButton('delete from list',
+                                            callback_data=vote_cb.new(action='del')))
+    await bot.send_message(message.chat.id, text='You list is empty...',
+                           parse_mode='HTML', reply_markup=keyboard)
     await bot.send_message(message.chat.id, text='This feature is not  available yet...')
 
 
@@ -116,7 +123,7 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
 
 @dp.message_handler(content_types=['text'])
 async def search(message: types.Message):
-    if message:
+    if message.text:
         search_result = parser.tomatoes_search(message.text).get('movies', '')
         if search_result:
             msg = '<b>Search results:</b>\n\n'

@@ -1,48 +1,13 @@
-import os
-import yaml
-import logging
-
 from random import randint
 from rotten_tomatoes_client import RottenTomatoesClient
 from rotten_tomatoes_client.query import MovieBrowsingQuery
 from rotten_tomatoes_client.query.parameters.browsing import Genre, MovieBrowsingCategory
-
-from configs.config import USERS
 
 
 class MovieParser:
     @property
     def base_url(self):
         return 'https://www.rottentomatoes.com/'
-
-    @staticmethod
-    def get_config() -> dict:
-        """ Get data from .yaml config file.
-
-        :return: dict with data.
-        """
-        filename = USERS
-        if not os.path.exists(filename):
-            logging.info(f'No such file or directory:{filename}')
-        else:
-            with open(filename) as file:
-                config = yaml.safe_load(file)
-            return config
-
-    @staticmethod
-    def __change_config(data) -> dict:
-        """ Change data in .yaml config file.
-
-        :param data: new data to write in config.
-        :return:     dict with data.
-        """
-        filename = USERS
-        if not os.path.exists(filename):
-            logging.info(f'No such file or directory:{filename}')
-        else:
-            with open(filename, 'w') as outfile:
-                yaml.dump(data, outfile)
-            return data
 
     @staticmethod
     def tomatoes_search(movie_name: str) -> dict:
@@ -96,39 +61,6 @@ class MovieParser:
                f'<b>Runtime: </b>{movie.get("runtime", "")}\n' \
                f'<b>Actors: </b>{actors}\n\n' \
                f'<a href="{url}">MoreInfo»</a>\n\n'
-
-    def add_movie_at_list(self, chat_id: int, movie: str) -> dict:
-        user_ids = self.get_config()
-        if chat_id in user_ids:
-            if movie not in user_ids.get(chat_id, list):
-                user_ids[chat_id].append(movie)
-                self.__change_config(user_ids)
-                return user_ids
-            else:
-                logging.info(f'Movie "{movie}" is already in the {chat_id} list')
-        else:
-            logging.info(f'No user with chat_id={chat_id}')
-
-    def remove_movie_from_list(self, chat_id: int, movie_id: int) -> dict:
-        user_ids = self.get_config()
-        if chat_id in user_ids:
-            if movie_id <= len(user_ids.get(chat_id, list)):
-                user_ids[chat_id].pop(movie_id)
-                self.__change_config(user_ids)
-                return user_ids
-            else:
-                logging.info(f'No "{movie_id}" in {chat_id} list')
-        else:
-            logging.info(f'No user with chat_id={chat_id}')
-
-    def add_user_at_list(self, chat_id: int) -> dict:
-        user_ids = self.get_config()
-        if chat_id in user_ids:
-            logging.info(f'The user with chat_id={chat_id} is already in the list.')
-        else:
-            user_ids[chat_id] = [None]
-            self.__change_config(user_ids)
-            return user_ids
 
     def get_random_action(self) -> str:
         """ Get random action movie from rotten tomatoes.
