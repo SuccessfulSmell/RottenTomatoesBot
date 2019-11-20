@@ -4,6 +4,9 @@ import logging
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.callback_data import CallbackData
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.storage import FSMContext
 
 from configs.config import token
 from cinema_helpers.movie_parcer import MovieParser
@@ -11,17 +14,25 @@ from cinema_helpers.movie_parcer import MovieParser
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 vote_cb = CallbackData('vote', 'action')
 parser = MovieParser()
+
+
+class Form(StatesGroup):
+    first_name = State()
+    last_name = State()
+    user_id = State()
+    search_item = State()
 
 
 @dp.message_handler(commands=['info', 'start', 'help'])
 async def start_info(message: types.Message):
     user_murkup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    user_murkup.row('/random', '/films')
-    user_murkup.row('/opening_this_week', '/donate')
-    user_murkup.row('/info')
+    user_murkup.row('/random', '/search')
+    user_murkup.row('/opening_this_week', '/movies')
+    user_murkup.row('/info', '/donate')
     await bot.send_message(message.chat.id, text='Start Info', reply_markup=user_murkup)
 
 
@@ -33,7 +44,7 @@ async def opening_this_week(message: types.Message):
     await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
 
 
-@dp.message_handler(commands=['films'])
+@dp.message_handler(commands=['movies'])
 async def list_of_films(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
@@ -121,12 +132,18 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
         await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
 
 
-@dp.message_handler(content_types=['text'])
+@dp.message_handler(commands='search')
 async def search(message: types.Message):
+    await Form.search_item.set()
+    await message.answer('Enter search movie: ')
+
+
+@dp.message_handler(state=Form.search_item)
+async def get_search(message: types.Message, state: FSMContext):
     if message.text:
         search_result = parser.tomatoes_search(message.text).get('movies', '')
         if search_result:
-            msg = '<b>Search results:</b>\n\n'
+            msg = f'<b>Search Results for : "{message.text}"</b>\n\n'
             for result in search_result:
                 msg += f'\n<b>&#127813;{result.get("name", "")}</b>' \
                        f'\n{parser.base_url}{result.get("url", "")}\n'
@@ -134,6 +151,7 @@ async def search(message: types.Message):
         else:
             msg = f'No results were found for "{message.text}" request . Sorry...'
             await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
+    await state.finish()
 
 
 if __name__ == '__main__':
