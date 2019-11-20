@@ -1,21 +1,18 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-import logging
-
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.callback_data import CallbackData
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.storage import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from configs.config import token
 from cinema_helpers.movie_parcer import MovieParser
-
-logging.basicConfig(level=logging.INFO)
+from cinema_helpers.logger import logger
 
 bot = Bot(token=token)
 storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+db = Dispatcher(bot, storage=storage)
 vote_cb = CallbackData('vote', 'action')
 parser = MovieParser()
 
@@ -25,43 +22,44 @@ class Form(StatesGroup):
     last_name = State()
     user_id = State()
     search_item = State()
+    movie = State()
 
 
-@dp.message_handler(commands=['info', 'start', 'help'])
+@db.message_handler(commands=['info', 'start', 'help'])
 async def start_info(message: types.Message):
+    logger.info('Show Start info')
     user_murkup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     user_murkup.row('/random', '/search')
     user_murkup.row('/opening_this_week', '/movies')
     user_murkup.row('/info', '/donate')
-    await bot.send_message(message.chat.id, text='Start Info', reply_markup=user_murkup)
+    await message.answer(text='Start Info', reply_markup=user_murkup)
 
 
-@dp.message_handler(commands=['opening_this_week'])
+@db.message_handler(commands=['opening_this_week'])
 async def opening_this_week(message: types.Message):
     msg = ''
     for movie in parser.get_tomatoes_affiche():
         msg += parser.output_data(movie)
-    await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
+    await message.answer(text=msg, parse_mode='HTML')
 
 
-@dp.message_handler(commands=['movies'])
+@db.message_handler(commands=['movies'])
 async def list_of_films(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(
-        types.InlineKeyboardButton('add at list', callback_data=vote_cb.new(action='add')))
+    keyboard.add(types.InlineKeyboardButton('add at list',
+                                            callback_data=vote_cb.new(action='add')))
     keyboard.add(types.InlineKeyboardButton('delete from list',
                                             callback_data=vote_cb.new(action='del')))
-    await bot.send_message(message.chat.id, text='You list is empty...',
-                           parse_mode='HTML', reply_markup=keyboard)
-    await bot.send_message(message.chat.id, text='This feature is not  available yet...')
+    await message.answer(text='You list is empty...', reply_markup=keyboard)
+    await message.answer(text='This feature is not  available yet...')
 
 
-@dp.message_handler(commands=['donate'])
-async def opening_this_week(message: types.Message):
-    await bot.send_message(message.chat.id, text='This feature is not  available yet...')
+@db.message_handler(commands=['donate'])
+async def donate(message: types.Message):
+    await message.answer(text='This feature is not  available yet...')
 
 
-@dp.message_handler(commands=['random'])
+@db.message_handler(commands=['random'])
 async def random_movie(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
@@ -80,65 +78,63 @@ async def random_movie(message: types.Message):
     )
     keyboard.add(
         types.InlineKeyboardButton('all', callback_data=vote_cb.new(action='13')))
-    await bot.send_message(message.chat.id, text='<b>Choose a genre:</b>',
-                           parse_mode='HTML', reply_markup=keyboard)
+    await message.answer(text='<b>Choose a genre:</b>',
+                         parse_mode='HTML', reply_markup=keyboard)
 
 
-@dp.callback_query_handler(vote_cb.filter(action=[str(index) for index in range(1, 14)]))
+@db.callback_query_handler(vote_cb.filter(action=[str(index) for index in range(1, 14)]))
 async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
-    logging.info('Got this callback data: %r', callback_data)
+    logger.info('Got callback data: %r', callback_data)
     await query.answer()
     callback_data_action = callback_data['action']
-    message_id = query.message.message_id
-    user_id = query.from_user.id
     if callback_data_action == '1':
         msg = parser.get_random_action()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '2':
         msg = parser.get_random_animation()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '3':
         msg = parser.get_random_art_and_foreign()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '4':
         msg = parser.get_random_classics()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '5':
         msg = parser.get_random_comedy()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '6':
         msg = parser.get_random_documentary()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '7':
         msg = parser.get_random_drama()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '8':
         msg = parser.get_random_horror()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '9':
         msg = parser.get_random_kids_and_family()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '10':
         msg = parser.get_random_mystery()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '11':
         msg = parser.get_random_romance()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '12':
         msg = parser.get_random_sci_fi_and_fantasy()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(msg, parse_mode='HTML')
     elif callback_data_action == '13':
         msg = parser.get_random_genre_movie()
-        await bot.edit_message_text(msg, user_id, message_id, parse_mode='HTML')
+        await query.message.answer(text=msg, parse_mode='HTML')
 
 
-@dp.message_handler(commands='search')
+@db.message_handler(commands='search')
 async def search(message: types.Message):
     await Form.search_item.set()
-    await message.answer('Enter search movie: ')
+    await message.answer(text='Enter search movie: ')
 
 
-@dp.message_handler(state=Form.search_item)
+@db.message_handler(state=Form.search_item)
 async def get_search(message: types.Message, state: FSMContext):
     if message.text:
         search_result = parser.tomatoes_search(message.text).get('movies', '')
@@ -147,15 +143,15 @@ async def get_search(message: types.Message, state: FSMContext):
             for result in search_result:
                 msg += f'\n<b>&#127813;{result.get("name", "")}</b>' \
                        f'\n{parser.base_url}{result.get("url", "")}\n'
-            await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
+            await message.answer(msg, parse_mode='HTML')
         else:
             msg = f'No results were found for "{message.text}" request . Sorry...'
-            await bot.send_message(message.chat.id, text=msg, parse_mode='HTML')
+            await message.answer(text=msg)
     await state.finish()
 
 
 if __name__ == '__main__':
     try:
-        executor.start_polling(dp, skip_updates=True)
+        executor.start_polling(db, skip_updates=True)
     except Exception as err:
-        logging.warning(err)
+        logger.warning(err)
