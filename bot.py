@@ -6,6 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.storage import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
+from configs.text_info import *
 from configs.config import token
 from cinema_helpers.movie_parcer import MovieParser
 from cinema_helpers.logger import logger
@@ -27,12 +28,11 @@ class Form(StatesGroup):
 
 @db.message_handler(commands=['info', 'start', 'help'])
 async def start_info(message: types.Message):
-    logger.info('Show Start info')
     user_murkup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     user_murkup.row('/random', '/search')
     user_murkup.row('/opening_this_week', '/movies')
     user_murkup.row('/info', '/donate')
-    await message.answer(text='Start Info', reply_markup=user_murkup)
+    await message.answer(text=START_INFO, reply_markup=user_murkup, parse_mode='HTML')
 
 
 @db.message_handler(commands=['opening_this_week'])
@@ -50,13 +50,13 @@ async def list_of_films(message: types.Message):
                                             callback_data=vote_cb.new(action='add')))
     keyboard.add(types.InlineKeyboardButton('delete from list',
                                             callback_data=vote_cb.new(action='del')))
-    await message.answer(text='You list is empty...', reply_markup=keyboard)
-    await message.answer(text='This feature is not  available yet...')
+    await message.answer(text=EMPTY_LIST_MSG, reply_markup=keyboard)
+    await message.answer(text=NO_WORK_FEATURE_MSG)
 
 
 @db.message_handler(commands=['donate'])
 async def donate(message: types.Message):
-    await message.answer(text='This feature is not  available yet...')
+    await message.answer(text=NO_WORK_FEATURE_MSG)
 
 
 @db.message_handler(commands=['random'])
@@ -76,10 +76,8 @@ async def random_movie(message: types.Message):
         types.InlineKeyboardButton('romance', callback_data=vote_cb.new(action='11')),
         types.InlineKeyboardButton('sci fi & fantasy', callback_data=vote_cb.new(action='12'))
     )
-    keyboard.add(
-        types.InlineKeyboardButton('all', callback_data=vote_cb.new(action='13')))
-    await message.answer(text='<b>Choose a genre:</b>',
-                         parse_mode='HTML', reply_markup=keyboard)
+    keyboard.add(types.InlineKeyboardButton('all', callback_data=vote_cb.new(action='13')))
+    await message.answer(text=GENRE_CHOOSE, parse_mode='HTML', reply_markup=keyboard)
 
 
 @db.callback_query_handler(vote_cb.filter(action=[str(index) for index in range(1, 14)]))
@@ -131,22 +129,22 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
 @db.message_handler(commands='search')
 async def search(message: types.Message):
     await Form.search_item.set()
-    await message.answer(text='Enter search movie: ')
+    await message.answer(text=SEARCH_MSG)
 
 
 @db.message_handler(state=Form.search_item)
 async def get_search(message: types.Message, state: FSMContext):
     if message.text:
-        search_result = parser.tomatoes_search(message.text).get('movies', '')
+        search_result = parser.tomatoes_search(message.text).get('movies')
         if search_result:
-            msg = f'<b>Search Results for : "{message.text}"</b>\n\n'
+            msg = SEARCH_FOR.format(message.text)
             for result in search_result:
-                msg += f'\n<b>&#127813;{result.get("name", "")}</b>' \
-                       f'\n{parser.base_url}{result.get("url", "")}\n'
+                url = f'{parser.base_url}{result.get("url", "")}'
+                movie = result.get("name", "")
+                msg += SEARCH_RESULT.format(movie, url)
             await message.answer(msg, parse_mode='HTML')
         else:
-            msg = f'No results were found for "{message.text}" request . Sorry...'
-            await message.answer(text=msg)
+            await message.answer(text=NO_SEARCH_RESULTS.format(message.text))
     await state.finish()
 
 
