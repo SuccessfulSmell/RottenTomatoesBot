@@ -26,16 +26,16 @@ class Form(StatesGroup):
     movie = State()
 
 
-@db.message_handler(commands=['info', 'start', 'help'])
+@db.message_handler(text=Command.start)
 async def start_info(message: types.Message):
     user_murkup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    user_murkup.row('/random', '/search')
-    user_murkup.row('/opening_this_week', '/movies')
-    user_murkup.row('/info', '/donate')
+    user_murkup.row(Command.random[0], Command.search[0])
+    user_murkup.row(Command.opening_this_week[0], Command.movies[0])
+    user_murkup.row(Command.start[0], Command.donate[0])
     await message.answer(text=START_INFO, reply_markup=user_murkup, parse_mode='HTML')
 
 
-@db.message_handler(commands=['opening_this_week'])
+@db.message_handler(text=Command.opening_this_week)
 async def opening_this_week(message: types.Message):
     msg = ''
     for movie in parser.get_tomatoes_affiche():
@@ -43,7 +43,7 @@ async def opening_this_week(message: types.Message):
     await message.answer(text=msg, parse_mode='HTML')
 
 
-@db.message_handler(commands=['movies'])
+@db.message_handler(text=Command.movies)
 async def list_of_films(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(types.InlineKeyboardButton('add at list',
@@ -54,12 +54,12 @@ async def list_of_films(message: types.Message):
     await message.answer(text=NO_WORK_FEATURE_MSG)
 
 
-@db.message_handler(commands=['donate'])
+@db.message_handler(text=Command.donate)
 async def donate(message: types.Message):
     await message.answer(text=NO_WORK_FEATURE_MSG)
 
 
-@db.message_handler(commands=['random'])
+@db.message_handler(text=Command.random)
 async def random_movie(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(
@@ -126,7 +126,7 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
         await query.message.answer(text=msg, parse_mode='HTML')
 
 
-@db.message_handler(commands='search')
+@db.message_handler(text=Command.search)
 async def search(message: types.Message):
     await Form.search_item.set()
     await message.answer(text=SEARCH_MSG)
