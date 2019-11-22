@@ -21,7 +21,7 @@ class MovieParser:
     @staticmethod
     def get_tomatoes_affiche() -> dict:
         """ Get last premieres from rotten tomatoes.
-        
+
         :return: dict with premieres.
         """
         query = MovieBrowsingQuery(minimum_rating=80, maximum_rating=100,
@@ -31,7 +31,7 @@ class MovieParser:
     @staticmethod
     def _get_random_movie(genre=None) -> dict:
         """ Get random movie from list by genre.
-        
+
         :param genre: genre of movie.
         :return:      data for random movie.
         """
@@ -46,7 +46,7 @@ class MovieParser:
 
     def output_data(self, movie: dict) -> str:
         """ Generate a simple html report from dict.
-        
+
         :param movie: dict of movie data.
         :return:      html report.
         """
@@ -64,7 +64,7 @@ class MovieParser:
 
     def get_random_action(self) -> str:
         """ Get random action movie from rotten tomatoes.
-        
+
         :return: html report.
         """
         movie = self._get_random_movie(Genre.action)

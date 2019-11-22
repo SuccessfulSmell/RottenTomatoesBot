@@ -6,17 +6,6 @@ NO_SEARCH_RESULTS = 'No results were found for "{}" request . Sorry...'
 SEARCH_FOR = '<b>Search Results for : "{}"</b>\n\n'
 SEARCH_RESULT = '\n<b>&#127813;{}</b>\n{}\n'
 
-
-class Command:
-    start = ['📄info', '&#128196;start', '&#128196;help',
-             '/info', '/start', '/help']
-    search = ['🔎search;', '/search']
-    random = ['🎬random', '/random']
-    movies = ['🎞movies', '/movies']
-    opening_this_week = ['🎥opening this week', '/opening_this_week']
-    donate = ['💡donate', '/donate']
-
-
 START_INFO = '<b>&#127813; RottenTomatoesBot</b>\n\n' \
              'You can use the following commands:\n' \
              '/random             - get random movie by genre.\n' \
